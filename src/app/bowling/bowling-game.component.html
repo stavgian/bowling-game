@@ -1,0 +1,61 @@
+<section class="bowling">
+  <header class="bowling__header">
+    <h1>Bowling</h1>
+    <p class="bowling__status" aria-live="polite">
+      @if (isComplete()) {
+        Game complete — final score <strong>{{ score() }}</strong>.
+      } @else {
+        Frame {{ currentFrame() }} of 10 — running score <strong>{{ score() }}</strong>.
+      }
+    </p>
+  </header>
+
+  <ol class="scoreboard" aria-label="Frame-by-frame scores">
+    @for (frame of frameSlots(); track $index) {
+      <li
+        class="scoreboard__frame"
+        [class.scoreboard__frame--current]="($index + 1) === currentFrame() && !isComplete()"
+        [class.scoreboard__frame--tenth]="$index === 9"
+      >
+        <span class="scoreboard__label">{{ $index + 1 }}</span>
+        <span class="scoreboard__rolls">
+          @for (roll of frame.rolls; track $index) {
+            <span class="scoreboard__roll">{{ rollMark(frame, $index) }}</span>
+          }
+        </span>
+        <span class="scoreboard__value">
+          {{ frame.cumulative !== null ? frame.cumulative : '' }}
+        </span>
+      </li>
+    }
+  </ol>
+
+  <div class="controls">
+    <div class="status" [class.status--complete]="isComplete()">
+      <p class="status__message">{{ statusMessage() }}</p>
+    </div>
+
+    <div class="pin-selector">
+      @for (pins of pinButtons; track pins) {
+        <button
+          type="button"
+          class="pin-selector__button"
+          [class.pin-selector__button--strike]="pins === 10"
+          [disabled]="!isPinButtonEnabled(pins)"
+          (click)="selectPin(pins)"
+        >
+          {{ pins }}
+        </button>
+      }
+    </div>
+
+    <div class="controls__actions">
+      <button class="controls__reset" type="button" (click)="reset()">New game</button>
+    </div>
+  </div>
+
+  @if (errorMessage()) {
+    <p class="error" role="alert">{{ errorMessage() }}</p>
+  }
+</section>
+
