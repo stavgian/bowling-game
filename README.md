@@ -1,4 +1,4 @@
-not # Bowling Game
+# Bowling Game
 
 **Single-player bowling scorekeeper** for the "Bowling-Game – Senior" coding challenge.  
 Built with **Angular 22** + **TypeScript** + **Vitest**.
