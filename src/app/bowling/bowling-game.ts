@@ -120,12 +120,14 @@ export class BowlingGame {
         const view = this.buildFinalFrameView(cursor, running);
         if (view) out.push(view);
       } else {
+        const prevCursor = cursor;
         const result = this.buildNormalFrameView(cursor, running);
         if (result) {
           out.push(result.view);
           cursor = result.nextCursor;
           running = result.nextRunning;
         }
+        if (cursor === prevCursor) break; // Frame still awaiting its next roll — nothing more to show.
       }
     }
     return out;
