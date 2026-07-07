@@ -1,0 +1,82 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+
+# Least-privilege defaults; each job below narrows further.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Only one Pages deployment at a time; let an in-flight run finish
+# rather than cancelling it, so Pages state never ends up half-applied.
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Reads repo Pages settings and exposes ${{ steps.pages.outputs.base_path }},
+      # which is "/<repo-name>" for a project page but "" if a custom domain is
+      # configured later — using it keeps base-href correct either way.
+      - name: Configure GitHub Pages
+        id: pages
+        uses: actions/configure-pages@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build (Angular production, with correct base href)
+        run: npm run build -- --base-href "${{ steps.pages.outputs.base_path }}/"
+
+      # Angular's new builder nests static output under dist/<project>/browser.
+      # Resolve the project name from angular.json instead of hardcoding it,
+      # and fall back to the legacy dist/<project> layout if present.
+      - name: Resolve build output directory
+        id: dist
+        run: |
+          PROJECT_NAME=$(node -p "require('./angular.json').defaultProject || Object.keys(require('./angular.json').projects)[0]")
+          if [ -d "dist/$PROJECT_NAME/browser" ]; then
+            echo "path=dist/$PROJECT_NAME/browser" >> "$GITHUB_OUTPUT"
+          else
+            echo "path=dist/$PROJECT_NAME" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Pages runs Jekyll by default, which ignores files/folders starting
+      # with "_" — Angular's hashed chunk filenames can collide with that.
+      - name: Disable Jekyll processing
+        run: touch "${{ steps.dist.outputs.path }}/.nojekyll"
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ${{ steps.dist.outputs.path }}
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
