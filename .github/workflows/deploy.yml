@@ -23,7 +23,7 @@ jobs:
       contents: read
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       # Reads repo Pages settings and exposes ${{ steps.pages.outputs.base_path }},
       # which is "/<repo-name>" for a project page but "" if a custom domain is
