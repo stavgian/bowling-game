@@ -165,3 +165,42 @@ describe('BowlingGame – validation', () => {
   });
 });
 
+
+describe('BowlingGame – isValidRoll (public validation API)', () => {
+  let game: BowlingGame;
+
+  beforeEach(() => {
+    game = new BowlingGame();
+  });
+
+  it('allows any roll on the first ball of a frame', () => {
+    expect(game.isValidRoll(0)).toBe(true);
+    expect(game.isValidRoll(7)).toBe(true);
+    expect(game.isValidRoll(10)).toBe(true);
+  });
+
+  it('rejects a second ball that would exceed standing pins', () => {
+    game.roll(6);
+    expect(game.isValidRoll(5)).toBe(false); // 6 + 5 > 10
+    expect(game.isValidRoll(4)).toBe(true);  // 6 + 4 = 10 (spare)
+  });
+
+  it('allows 0–10 on the second ball after a first-ball strike (next frame)', () => {
+    game.roll(10);
+    expect(game.isValidRoll(0)).toBe(true);
+    expect(game.isValidRoll(10)).toBe(true);
+  });
+
+  it('allows a second-ball score of 10 when first ball was 0 (spare scenario)', () => {
+    // This is the case that was incorrectly DISPLAYED as 'X' instead of '/'.
+    // Validation must accept it as legal.
+    game.roll(0);
+    expect(game.isValidRoll(10)).toBe(true);
+  });
+
+  it('returns false for any roll when the game is complete', () => {
+    playAll(game, Array(12).fill(10)); // perfect game
+    expect(game.isValidRoll(0)).toBe(false);
+    expect(game.isValidRoll(5)).toBe(false);
+  });
+});

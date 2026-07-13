@@ -57,6 +57,14 @@ export class BowlingGameService {
     this.syncState();
   }
 
+  /**
+   * Check whether `pins` is a valid next roll for the current player.
+   * Delegates to the domain so validation logic lives in one place.
+   */
+  isValidRoll(pins: number): boolean {
+    return this.currentPlayer().game.isValidRoll(pins);
+  }
+
   /** Start a new game, keeping the current roster of players. */
   reset(): void {
     this._players.set(this._players().map((p) => this.createPlayer(p.name)));

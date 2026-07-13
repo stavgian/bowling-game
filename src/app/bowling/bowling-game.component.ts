@@ -64,22 +64,11 @@ export class BowlingGameComponent {
 
   /**
    * Check if a given pin count is a valid next roll.
-   * Invalid buttons are disabled in the UI to prevent user error.
+   * Delegates to the domain via the service — single source of truth for rules.
    */
   isPinButtonEnabled(pins: number): boolean {
     if (this.isComplete()) return false;
-
-    const played = this.frames();
-    if (played.length === 0) return true;
-
-    const frameIndex = this.currentFrame() - 1;
-    const frameData = played[frameIndex];
-    if (!frameData) return true;
-
-    const isFinalFrame = frameIndex === TOTAL_FRAMES - 1;
-    return isFinalFrame
-      ? this.isValidFrame10Roll(frameData, pins)
-      : this.isValidNormalFrameRoll(frameData, pins);
+    return this.service.isValidRoll(pins);
   }
 
   selectPin(pins: number): void {
@@ -104,14 +93,19 @@ export class BowlingGameComponent {
    * Bowling-scoresheet mark for a single roll within a frame slot:
    * `X` = strike, `/` = spare, `-` = miss, otherwise the digit itself.
    */
+  /**
+   * Spare check must come BEFORE strike check: a second ball scoring 10 when
+   * the previous ball was not a strike is a spare ('/'), not a strike ('X').
+   * Example: [0, 10] should display '- /' not '- X'.
+   */
   rollMark(frame: FrameView, rollIndex: number): string {
     const pins = frame.rolls[rollIndex];
     if (pins === undefined) return '';
-    if (pins === MAX_PINS) return 'X';
     if (rollIndex > 0) {
       const prev = frame.rolls[rollIndex - 1];
       if (prev !== MAX_PINS && prev + pins === MAX_PINS) return '/';
     }
+    if (pins === MAX_PINS) return 'X';
     return pins === 0 ? '-' : String(pins);
   }
 
@@ -122,33 +116,6 @@ export class BowlingGameComponent {
   private isFrameFull(frame: FrameView): boolean {
     const firstRoll = frame.rolls[0];
     return firstRoll === MAX_PINS || frame.rolls.length === 2;
-  }
-
-  private isValidNormalFrameRoll(frame: FrameView, pins: number): boolean {
-    if (frame.rolls.length === 0) return true;
-    const first = frame.rolls[0];
-    if (first === MAX_PINS) return true; // Already in next frame
-    if (frame.rolls.length === 1) return first + pins <= MAX_PINS;
-    return true; // Frame complete, in next frame
-  }
-
-  private isValidFrame10Roll(frame: FrameView, pins: number): boolean {
-    const rollCount = frame.rolls.length;
-    if (rollCount === 0) return true;
-
-    const [a, b] = frame.rolls;
-    if (rollCount === 1) {
-      return a === MAX_PINS ? true : a + pins <= MAX_PINS;
-    }
-
-    if (rollCount === 2) {
-      if (a !== MAX_PINS && a + b !== MAX_PINS) return false; // No third roll
-      if (a === MAX_PINS && b === MAX_PINS) return true; // Both strikes
-      if (a === MAX_PINS) return b + pins <= MAX_PINS; // Strike then partial
-      return true; // Spare → fresh rack
-    }
-
-    return false;
   }
 
   private buildStatusMessage(): string {
