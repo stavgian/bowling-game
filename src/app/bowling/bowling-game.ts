@@ -66,7 +66,7 @@ export class BowlingGame {
         'Cannot roll: the game is already complete.',
       );
     }
-    if (!this.isValidNextRoll(pins)) {
+    if (!this.isValidRoll(pins)) {
       throw new BowlingError(
         'FRAME_SUM_EXCEEDED',
         `Invalid pin count ${pins} for the current frame (rack has fewer pins standing).`,
@@ -226,10 +226,10 @@ export class BowlingGame {
    * Check whether adding `pins` would leave the frame in a legal state.
    * Core constraint: can't knock down more pins than are standing.
    *
-   * Why separate from roll()? Enables UI to disable invalid buttons
-   * before the user clicks them.
+   * Public so the UI can disable invalid buttons before the user clicks them,
+   * keeping validation logic in one place (Single Responsibility Principle).
    */
-  private isValidNextRoll(pins: number): boolean {
+  isValidRoll(pins: number): boolean {
     let cursor = 0;
 
     // Walk through frames 1-9
@@ -251,7 +251,7 @@ export class BowlingGame {
 
   /**
    * Frame 10 validation is subtle: the rack resets after a strike.
-   * Extract to keep isValidNextRoll readable.
+   * Extract to keep isValidRoll readable.
    */
   private isValidFrame10Roll(tenthFrameRolls: number[], pins: number): boolean {
     if (tenthFrameRolls.length === 0) return true;
