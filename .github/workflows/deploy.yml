@@ -63,7 +63,7 @@ jobs:
         run: touch "${{ steps.dist.outputs.path }}/.nojekyll"
 
       - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v5
         with:
           path: ${{ steps.dist.outputs.path }}
 
